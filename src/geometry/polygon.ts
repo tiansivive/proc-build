@@ -1,6 +1,7 @@
 import fp from 'lodash/fp'
 
 import * as P from "./point";
+import * as V from "./vector";
 import * as LS from "./segment";
 import * as L from "./line";
 
@@ -75,7 +76,7 @@ const fromEdges = (edges: LS.LineSegment[]): Polygon => ({
 
 export const cut = (l: L.Line) => (poly: Polygon): Polygon[] => {
     
-    const intersection = poly.edges.map(L.intersect(l))
+    const intersection = poly.edges.map(LS.intersect(l))
     const allSegments = makeNewSegments(poly)(intersection)
 
     const min = intersection.reduce((min, point) => O.isNone(point) ? min : Math.min(min, point.value.x) , Number.POSITIVE_INFINITY)
@@ -86,31 +87,36 @@ export const cut = (l: L.Line) => (poly: Polygon): Polygon[] => {
         allSegments.filter(ls => ls.pivot.x >= min && ls.end.x >= min)
     ].map(fp.flow(
         fromEdges,
-        sortClockWise
+        sortClockWise 
     ))
-
 } 
 
 
-export const divide = (cuts: L.Line[]) => (poly: Polygon): Polygon[] => {
-
-
-    return cuts.reduce((polys, cutLine) => fp.flow(
+export const divide = (cuts: L.Line[]) => (poly: Polygon): Polygon[] => cuts.reduce(
+    (polys, cutLine) => fp.flow(
         fp.last,
         cut(cutLine), 
         fp.concat(fp.initial(polys))
-    )(polys) , [poly])
+    )(polys)
+    , [poly]
+)
 
-
-}
-
+export const calculateCentroid = (poly: Polygon): P.Point => fp.flow(
+    fp.reduce<V.Vector, P.Point>((sum, v) => V.addV(sum)(v),  { x: 0, y: 0 }),
+    V.div(poly.vertices.length)
+)(poly.vertices)
 
 export const sortClockWise = (poly: Polygon): Polygon => {
-    const origin: P.Point = P.make(0, 0)
+    const centroid = calculateCentroid(poly)
 
     return fp.flow(
-        fp.map<P.Point, [P.Point, LS.LineSegment]>(p => [p, LS.makeFromPoints(origin, p)]),
+        fp.map<P.Point, [P.Point, LS.LineSegment]>(p => [p, LS.makeFromPoints(centroid, p)]),
         fp.sortBy([([, ls]) => ls.angle, ([, ls]) => ls.length]),
+       
+        pairs => {
+            pairs.forEach(([p, ls]) => console.log(P.Show.show(p) + ":", ls.angle, ls.length))
+            return pairs
+        },
         fp.map(fp.first),
         make
     )(poly.vertices)

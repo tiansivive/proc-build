@@ -1,10 +1,18 @@
 import * as P from "./point"
+import * as S from 'fp-ts/Show'
 import fp from 'lodash/fp'
 
 export type Vector = {
     x: number,
     y: number
 }
+
+
+export const Show: S.Show<Vector> = S.getStructShow<Vector>({
+    x: S.showNumber,
+    y: S.showNumber
+  })
+  
 
 export const make = (x: number, y: number): Vector => ({ x, y })
 

@@ -48,7 +48,8 @@ export const intersect = (l1: Line) => (l2: Line): O.Option<Point> => {
 
 const vecEquation = (p: Point, v: V.Vector): VectorEquation => t => fp.flow(
     V.mul(t),
-    V.addV(p as V.Vector)
+    V.addV(p as V.Vector),
+    v => V.make(+v.x.toFixed(2), +v.y.toFixed(2))
 )(v)
 
 const slope = (p1: Point, p2: Point): number => (p2.y - p1.y) / ( p2.x - p1.x )
@@ -58,7 +59,7 @@ const calcParams = (p1: Point, p2: Point): { m: number, b: number } => {
     const b = yIntercept(p1, m)
     return { m, b }
 }
-const slopeEquation = (p1: Point, p2: Point): (axis: "y" | "x") => SlopeEquation => {
+export const slopeEquation = (p1: Point, p2: Point): (axis: "y" | "x") => SlopeEquation => {
     const { m, b } = calcParams(p1, p2)
     return axis => axis === 'y' 
         ? x => m*x + b

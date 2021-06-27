@@ -1,5 +1,5 @@
 import * as S from 'fp-ts/Show'
-
+import * as O from 'fp-ts/Option'
 
 import * as P from "./point";
 import * as L from "./line";
@@ -24,7 +24,7 @@ export type LineSegment = L.Line & {
 }
 
 export const Show: S.Show<LineSegment> = {
-    show: ls => P.Show.show(ls.p) + ' -> ' + P.Show.show(ls.end)
+    show: ls => P.Show.show(ls.p) + ' -> ' + P.Show.show(ls.end) + ' | angle: ' + ls.angle
 }
   
 
@@ -60,3 +60,14 @@ export const fromLine = (length: number) => (l: L.Line): LineSegment => make(len
 
 export const rotate = (angle: number) => (segment: LineSegment): LineSegment => make(segment.length)(segment.pivot, segment.angle + angle)
 
+export const intersect: (l1: L.Line) => (l2: LineSegment) => O.Option<P.Point> = l1 => l2 => fp.flow(
+    L.intersect(l1),
+    O.chain<P.Point, P.Point>(point => 
+        point.x < l2.min.x || point.y < l2.min.y ||
+        point.x > l2.max.x || point.y > l2.max.y
+            ? O.none
+            : O.some(point)
+     )
+)(l2)
+
+    
