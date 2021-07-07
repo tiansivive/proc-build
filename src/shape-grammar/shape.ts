@@ -1,65 +1,61 @@
-import F from "@flatten-js/core"
+import * as P from '../geometry/point'
+import * as V from '../geometry/vector'
+import * as PL from '../geometry/polygon'
 
+import * as S from 'fp-ts/Show'
+
+import fp from 'lodash/fp'
 
 export type Shape<S extends string> = {
     symbol: S,
-    position: F.Point,
-    polygon: F.Polygon
+    position: P.Point,
+    scale: V.Vector,
+    polygon: PL.Polygon
 }
 
-export const create: <S extends string>(symbol: S, position: F.Point, polygon: F.Polygon | Array<F.Point> ) => Shape<S> = (
+
+export const Show: S.Show<Shape<string>> = {
+    show: shape => `\nShape ${shape.symbol} @ ${P.Show.show(shape.position)}\n`
+        + PL.Show.show(shape.polygon)
+        
+}
+  
+
+
+export const make: <S extends string>(symbol: S, polygon: PL.Polygon, position?: P.Point, scale?: V.Vector ) => Shape<S> = (
     symbol,
-    position,
-    polygon
+    polygon,
+    position = { x: 0, y: 0 },
+    scale = { x: 1, y: 1 },
 ) => ({
     symbol,
+    polygon,
     position,
-    polygon:  Array.isArray(polygon) ? new F.Polygon(polygon) : polygon
+    scale
 })
   
 
-export const scope: <S extends string>(s: Shape<S>) => F.Vector = ({
-    polygon : { box } 
-}) => new F.Vector(
-    box.xmax - box.xmin,
-    box.ymax - box.ymin
-) 
 
 
-export const print: <S extends string>(s: Shape<S>) => void = s => {
-    console.log(`-------------- Shape: ${s.symbol} --------------`)
-    console.log(s.position)
-    Array.from(s.polygon.edges).forEach((e: F.Edge, i) => {
-        console.log(`Edge ${i +1}:`, e.start, e.end)
-    })
-}
+// export const scope: <S extends string>(s: Shape<S>) => V.Vector = ({
+//     polygon : { box } 
+// }) => V.make(
+//     box.xmax - box.xmin,
+//     box.ymax - box.ymin
+// ) 
 
-const colors = ['red', 'blue', 'green', 'yellow', 'black', 'cyan', 'orange', 'pink', 'magenta', 'purple', 'grey']
 
 export const draw: (ctx: CanvasRenderingContext2D) => <S extends string>(
     shape: Shape<S>,
-    i?: number
-  ) => void = ctx => (shape, i) => {
+    color?: string
+  ) => void = ctx => (shape, color = 'red') => {
 
-    const color = colors[i || 0]
-    const first: F.Edge = Array.from(shape.polygon.edges)[0];
-    console.log('\n---------------------')
-    console.log('drawing shape', shape)
-    console.log('color shape', color)
-    console.log('first edge', first)
-    console.log('ctx', ctx)
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(
-        first.start.x + shape.position.x,
-        first.start.x + shape.position.y
-    );
-  
-    shape.polygon.edges.forEach((e: F.Edge) => ctx.lineTo(
-        shape.position.x + e.end.x,
-        shape.position.y + e.end.y
-    ));
-    ctx.fill();
+    const scaled = fp.flow(
+        fp.map<P.Point, P.Point>(v =>  ({ x: v.x * shape.scale.x, y: v.y * shape.scale.y  })),
+        PL.make
+    )(shape.polygon.vertices)
+    PL.draw(ctx)(scaled, color, shape.position)
+   
   };
   
   

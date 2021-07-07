@@ -20,8 +20,8 @@ export type VectorEquation = (t: number) => V.Vector
 export const make = (p: Point, angle: number): Line => {
     const inRad = U.toRad(angle)
     const vector = V.make(
-        +Math.cos(inRad).toFixed(4), 
-        +Math.sin(inRad).toFixed(4)
+        Math.cos(inRad), 
+        Math.sin(inRad)
     )
     return {
         p,

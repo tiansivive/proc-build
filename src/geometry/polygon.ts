@@ -126,23 +126,28 @@ export const sortClockWise = (poly: Polygon): Polygon => {
 
 export const draw: (ctx: CanvasRenderingContext2D) => (
     poly: Polygon,
-    color?: string
-  ) => void = ctx => (poly, color = 'red') => {
+    color?: string,
+    position?: P.Point
+  ) => void = ctx => (poly, color = 'red', position = { x: 0, y: 0 }) => {
 
-    
-    const first = poly.edges[0]
+    const withPosOffset = V.addV(position)
+    const start = withPosOffset(poly.edges[0].pivot)
 
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.moveTo(
-        first.pivot.x,
-        first.pivot.y
+        start.x,
+        start.y
     );
   
-    poly.edges.forEach(e => ctx.lineTo(
-        e.end.x,
-        e.end.y
-    ));
+    poly.edges.forEach(e =>  {
+        const next = withPosOffset(e.end)
+        ctx.lineTo(
+            next.x,
+            next.y
+        )
+
+    });
     ctx.fill();
   };
   
