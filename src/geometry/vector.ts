@@ -34,9 +34,14 @@ export const rotate = (angle: number) => (v: Vector): Vector => ({
 export const magnitude = P.distance
 export const calcUnit = (p1: P.Point, p2: P.Point): Vector => {
     const m = magnitude(p1)(p2)
-    return fp.flow(
-        subV(p1),
-        mul(1/m)
-    )(p2)
+
+    return p2 
+        |> subV(p1) 
+        |> mul(1/m)
+
+    // return fp.flow(
+    //     subV(p1),
+    //     mul(1/m)
+    // )(p2)
 
 }

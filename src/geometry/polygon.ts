@@ -68,10 +68,10 @@ const makeNewSegments: (poly: Polygon) => (intersection: O.Option<P.Point>[]) =>
 
 const fromEdges = (edges: LS.LineSegment[]): Polygon => ({
     edges,
-    vertices: fp.flow(
-        fp.flatMap((e: LS.LineSegment) => [e.pivot, e.end]),
-        fp.uniqWith(fp.isEqual)
-    )(edges)
+    vertices: edges 
+        |> fp.flatMap((e: LS.LineSegment) => [e.pivot, e.end])
+        |> fp.uniqWith(fp.isEqual)
+  
 }) 
 
 export const cut = (l: L.Line) => (poly: Polygon): Polygon[] => {
@@ -93,33 +93,31 @@ export const cut = (l: L.Line) => (poly: Polygon): Polygon[] => {
 
 
 export const divide = (cuts: L.Line[]) => (poly: Polygon): Polygon[] => cuts.reduce(
-    (polys, cutLine) => fp.flow(
-        fp.last,
-        cut(cutLine), 
-        fp.concat(fp.initial(polys))
-    )(polys)
+    (polys, cutLine) => polys 
+        |> fp.last
+        |> cut(cutLine) 
+        |> fp.concat(fp.initial(polys))
     , [poly]
 )
 
-export const calculateCentroid = (poly: Polygon): P.Point => fp.flow(
-    fp.reduce<V.Vector, P.Point>((sum, v) => V.addV(sum)(v),  { x: 0, y: 0 }),
-    V.div(poly.vertices.length)
-)(poly.vertices)
+export const calculateCentroid = (poly: Polygon): P.Point => poly.vertices
+    |> fp.reduce<V.Vector, P.Point>((sum, v) => V.addV(sum)(v),  { x: 0, y: 0 })
+    |> V.div(poly.vertices.length)
+
 
 export const sortClockWise = (poly: Polygon): Polygon => {
     const centroid = calculateCentroid(poly)
 
-    return fp.flow(
-        fp.map<P.Point, [P.Point, LS.LineSegment]>(p => [p, LS.makeFromPoints(centroid, p)]),
-        fp.sortBy([([, ls]) => ls.angle, ([, ls]) => ls.length]),
-       
-        pairs => {
+    return poly.vertices
+        |> fp.map<P.Point, [P.Point, LS.LineSegment]>(p => [p, LS.makeFromPoints(centroid, p)])
+        |> fp.sortBy([([, ls]) => ls.angle, ([, ls]) => ls.length])
+        |> (pairs => {
             pairs.forEach(([p, ls]) => console.log(P.Show.show(p) + ":", ls.angle, ls.length))
             return pairs
-        },
-        fp.map(fp.first),
-        make
-    )(poly.vertices)
+        })
+        |> fp.map(fp.first)
+        |> make
+  
 
 }
 
